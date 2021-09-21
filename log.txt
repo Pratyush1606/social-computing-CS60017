@@ -1,0 +1,23 @@
+## Question 1
+
+### A.
+1. Number of nodes present in the network: 4039
+2. Number of nodes present in the new network after removing specified nodes: 2692
+3. Number of edges present in the network: 88234
+4. Number of edges present in the new network after removing specified nodes: 39116
+5. Number of nodes with the highest degree in the network: 1
+   The node IDs with the highest degree in the network are:
+107
+6. Plotting the distribution of shortest path lengths...
+   Plotting Done.
+
+### B.
+1. The fraction of nodes in the largest connected component of the network: 1.0000
+2. The number of articulation points in the network: 11
+3. The number of strongly connected components (SCC) in the network: 1
+   The number of weakly connected components (WCC) in the network: 1
+4. Plotting the distribution of sizes of connected components...
+   Plotting Done.
+5. The approximated diameter of the largest connected component of the network taking 10 test nodes: 7
+   The approximated diameter of the largest connected component of the network taking 100 test nodes: 8
+   The approximated diameter of the largest connected component of the network taking 1000 test nodes: 8
