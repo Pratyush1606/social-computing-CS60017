@@ -1,6 +1,7 @@
 import os
 import snap
 from PIL import Image
+from collections import defaultdict
 
 from config import CONFIG
 
@@ -90,6 +91,34 @@ class Network:
         list_edge_bridges = self.graph.GetEdgeBridges()
         return len(list_edge_bridges)
 
+    def get_num_triangles(self):
+        '''
+        Get the number of triangles
+        '''
+        return self.graph.GetTriads()
+
+    def get_num_rectangles(self):
+        '''
+        Get the number of rectangles
+        '''
+        # Has to be implemented
+        return "Yet to implement"
+
+    def get_largest_wcc(self):
+        '''
+        Get a graph representing the largest weakly connected component in the original graph
+        '''
+        return self.graph.GetMxWcc()
+    
+    def get_largest_scc(self):
+        '''
+        Get a graph representing the largest strongly connected component in the original graph
+        '''
+        return self.graph.GetMxScc()
+    
+    def print_graph_info(self):
+        self.graph.PrintInfo("Python type TUNGraph", "q2-graph-info.txt", False)
+
 
 if __name__ == "__main__":
     print("## Question 2")
@@ -110,7 +139,21 @@ if __name__ == "__main__":
     print("  (b) Plotting the Degree distribution...")
     network.plot_degree_distribution()
     print("      Plotting Done.")
+
+    # Get the Largest WCC and SCC
+    wcc = network.get_largest_wcc()
+    scc = network.get_largest_scc()
+    print("C.")
+    print("  (a) Number of nodes in largest weakly connected component (WCC): {}".format(wcc.GetNodes()))
+    print("      Number of edges in largest weakly connected component (WCC): {}".format(wcc.GetEdges()))
+    print("  (b) Number of nodes in largest strongly connected component (SCC): {}".format(scc.GetNodes()))
+    print("      Number of edges in largest strongly connected component (SCC): {}".format(scc.GetEdges()))
     
     print("D. Average Clustering Coefficient: {:.4f}".format(network.get_avg_clustering_coeff()))
 
+    print("E. Number of triangles: {}".format(network.get_num_triangles()))
+    print("   Number of rectangles: {}".format(network.get_num_triangles()))
+
     print("F. Number of edge bridges: {}".format(network.get_num_edge_bridegs()))
+
+    network.print_graph_info()
