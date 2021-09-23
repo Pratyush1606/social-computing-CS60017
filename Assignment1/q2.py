@@ -1,18 +1,23 @@
 import os
+import sys
 import snap
 from PIL import Image
-from collections import defaultdict
 
 from config import CONFIG
 
 dataset = os.path.join(CONFIG["DATASET_DIR"], "Email-EuAll.txt")
 plot_dir = CONFIG["PLOT_DIR"]
+answer_loc = CONFIG["ANSWER_LOCATION"]
 
 class Network:
 
     def __init__(self, dataset):
-        # Loading original (without removing any node) undirected graph from the dataset text file
-        self.graph = snap.LoadEdgeList(snap.PUNGraph, dataset, 0, 1)
+        # Loading original (without removing any node) directed graph from the dataset text file
+        self.dataset = dataset
+        self.graph = snap.LoadEdgeList(snap.PNGraph, dataset, 0, 1)
+        
+        # Getting an undirected version of the graph
+        self.undirected_graph = snap.LoadEdgeList(snap.PUNGraph, dataset, 0, 1)
         self.network_name = ""
     
     def get_num_of_nodes(self):
@@ -53,9 +58,11 @@ class Network:
     
     def plot_degree_distribution(self):
         '''
-        Plot the degree distribution
+        Plot the degree distribution taking the graph as undirected
         '''
-        self.graph.PlotOutDegDistr(self.network_name, "{} - degree distribution".format(self.network_name))
+
+        # Using the undirected version of the graph to plot the degree distribution
+        self.undirected_graph.PlotOutDegDistr(self.network_name, "{} - degree distribution".format(self.network_name))
 
         '''
         Here all the files will be generated in this directory only. So the files have to moved to "plots"
@@ -84,11 +91,19 @@ class Network:
         '''
         return self.graph.GetClustCf()
     
-    def get_num_edge_bridegs(self):
+    def get_num_edge_bridges(self):
         '''
         Get the number of edge bridges
         '''
-        list_edge_bridges = self.graph.GetEdgeBridges()
+        
+        '''
+        An edge is a bridge if, when removed, increases the number of connected components. 
+        So it doesn't depend whether the edge is directed or undirected in direction, afterall
+        it is connecting two components only.
+        So we can use the undirected version of the graph to get the number of edge bridges.
+        '''
+        
+        list_edge_bridges = self.undirected_graph.GetEdgeBridges()
         return len(list_edge_bridges)
 
     def get_num_triangles(self):
@@ -120,8 +135,24 @@ class Network:
         self.graph.PrintInfo("Python type TUNGraph", "q2-graph-info.txt", False)
 
 
+class Tee(object):
+    def __init__(self, *files):
+        self.files = files
+    def write(self, obj):
+        for f in self.files:
+            f.write(obj)
+    def flush(self):
+        pass
+
 if __name__ == "__main__":
-    print("## Question 2")
+    # Configuring script to print to stdout as well as answers.txt
+    f = open(answer_loc, 'a')
+    backup = sys.stdout
+    sys.stdout = Tee(sys.stdout, f)
+
+    print()
+    print("Question 2")
+    print("-----------")
     print()
 
     # Creating network from the dataset
@@ -152,8 +183,9 @@ if __name__ == "__main__":
     print("D. Average Clustering Coefficient: {:.4f}".format(network.get_avg_clustering_coeff()))
 
     print("E. Number of triangles: {}".format(network.get_num_triangles()))
-    print("   Number of rectangles: {}".format(network.get_num_triangles()))
+    print("   Number of rectangles: {}".format(network.get_num_rectangles()))
 
-    print("F. Number of edge bridges: {}".format(network.get_num_edge_bridegs()))
-
-    network.print_graph_info()
+    print("F. Number of edge bridges: {}".format(network.get_num_edge_bridges()))
+    
+    print()
+    print("#################")

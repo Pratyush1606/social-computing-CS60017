@@ -1,15 +1,18 @@
 import os
+import sys
 import snap
 
 from config import CONFIG
 
 dataset = os.path.join(CONFIG["DATASET_DIR"], "facebook_combined.txt")
 plot_dir = CONFIG["PLOT_DIR"]
+answer_loc = CONFIG["ANSWER_LOCATION"]
 
 class Network:
 
     def __init__(self, dataset):
         # Loading original (without removing any node) undirected graph from the facebook dataset text file
+        self.dataset = dataset
         self.graph = snap.LoadEdgeList(snap.PUNGraph, dataset, 0, 1)
         self.network_name = ""
     
@@ -153,13 +156,28 @@ class Network:
         '''
         return self.graph.GetBfsFullDiam(num_test_nodes)
 
+class Tee(object):
+    def __init__(self, *files):
+        self.files = files
+    def write(self, obj):
+        for f in self.files:
+            f.write(obj)
+    def flush(self):
+        pass
 
 if __name__ == "__main__":
-    print("## Question 1")
+    # Configuring script to print to stdout as well as answers.txt
+    f = open(answer_loc, 'a')
+    backup = sys.stdout
+    sys.stdout = Tee(sys.stdout, f)
+
+    print()
+    print("Question 1")
+    print("-----------")
     print()
 
     # Part A
-    print("### A.")
+    print("A. Structure of the network")
 
     # Creating network from the dataset
     network = Network(dataset=dataset)
@@ -179,7 +197,7 @@ if __name__ == "__main__":
 
     num_nodes_with_highest_degree, list_of_nodeids_with_highest_deg = network.get_nodes_with_highest_degree()
     print("5. Number of nodes with the highest degree in the network: {}".format(num_nodes_with_highest_degree))
-    print("   The node IDs with the highest degree in the network are:")
+    print("   The node IDs with the highest degree in the network is/are:", end=" ")
     print(*list_of_nodeids_with_highest_deg)
 
     print("6. Plotting the distribution of shortest path lengths...")
@@ -189,7 +207,7 @@ if __name__ == "__main__":
     print()
 
     # Part B
-    print("### B.")
+    print("B. Components of the network")
 
     print("1. The fraction of nodes in the largest connected component of the network: {:.4f}".format(network.graph.GetMxSccSz()))
 
@@ -205,3 +223,6 @@ if __name__ == "__main__":
     print("5. The approximated diameter of the largest connected component of the network taking {} test nodes: {}".format(10, network.get_diameter(10)))
     print("   The approximated diameter of the largest connected component of the network taking {} test nodes: {}".format(100, network.get_diameter(100)))
     print("   The approximated diameter of the largest connected component of the network taking {} test nodes: {}".format(1000, network.get_diameter(1000)))
+    
+    print()
+    print("#################")
