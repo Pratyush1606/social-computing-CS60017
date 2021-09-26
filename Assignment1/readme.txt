@@ -9,7 +9,7 @@ Social Computing (CS60017)
 ## System Requirements
 
 - Python Interpreter used: Python 3.7.9
-  The code should run in any version of Python >= 3.6
+  The code should run in any version of Python >= 3.7
 - SNAP 6.0.0
 - Pillow 8.3.2
 
