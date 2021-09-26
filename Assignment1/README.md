@@ -70,6 +70,6 @@ Assignment1
 
 After successful execution of the above command, a folder `plots` containing all the specific distribution plots and `answers.txt` containing all the answers of both the questions will be generated.
 
-The output will be generated inside the file `answers.txt` and will be printed to STDOUT also.
+The output of both the questions will be generated inside the file `answers.txt` and will be printed to STDOUT also.
 
 During the above execution, some intermediate plot files of extension .png, .plt and .tab will be generated inside this directory. Then the correct plot file will be moved/saved to `plots` folder, and the rest files (of extension .plt and .tab, also .png in case of the second question as it is asked to save in .jpg format) will be deleted. At the ned of the execution, all the specified plots with correct names and extensions will have been generated in `plots`.
