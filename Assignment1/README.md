@@ -16,6 +16,8 @@ Social Computing (CS60017)
 > The dependencies have been frozen inside the requirements.txt file, and if you're working in a python virtual environment, the dependencies can be installed using the command  
 "pip install -r requirements.txt".
 
+------------
+
 ## Folder structure
 
 ```
@@ -43,6 +45,8 @@ Assignment1
 
 - `requirements.txt` contains all the dependencies with correct versions.
 - `logs.txt` contains the outputs obtained while running
+
+------------
 
 ## Running Instructions
 
