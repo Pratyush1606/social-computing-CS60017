@@ -5,7 +5,7 @@ from PIL import Image
 
 from config import CONFIG
 
-dataset = os.path.join(CONFIG["DATASET_DIR"], "Email-EuAll.txt")
+dataset = os.path.join(CONFIG["DATASET_DIR"], "email-Eu-core.txt")
 plot_dir = CONFIG["PLOT_DIR"]
 answer_loc = CONFIG["ANSWER_LOCATION"]
 
@@ -98,17 +98,25 @@ class Network:
         
         '''
         An edge is a bridge if, when removed, increases the number of connected components. 
-        So it doesn't depend whether the edge is directed or undirected in direction, afterall
-        it is connecting two components only.
-        So we can use the undirected version of the graph to get the number of edge bridges.
+        Here only the strong edges are considered which when removed, increase the number of strongly connected components
         '''
-        
-        list_edge_bridges = self.undirected_graph.GetEdgeBridges()
-        return len(list_edge_bridges)
+        count = 0
+        scc_count = self.get_num_strongly_connected_comps()
+        for edge in self.graph.Edges():
+            src, dest = edge.GetId()
+            self.graph.DelEdge(src, dest)
+            if(self.get_num_strongly_connected_comps() > scc_count):
+                count += 1
+            self.graph.AddEdge(src, dest)
+        return count
 
     def get_num_triangles(self):
         '''
         Get the number of triangles
+        '''
+
+        '''
+        Here the different direction/configuration is not being considered
         '''
         return self.graph.GetTriads()
 
@@ -116,8 +124,35 @@ class Network:
         '''
         Get the number of rectangles
         '''
-        # Has to be implemented
-        return "Yet to implement"
+
+        '''
+        Using the same concept of getting the number of triangles, this function is being implemented without considering the direction/configuration.
+
+        '''
+        count_rectangles = 0
+        visited = set()
+        nodes_count = self.get_num_of_nodes()
+        
+        for node1_id in range(nodes_count):
+            for node2_id in range(node1_id+1, nodes_count):
+                
+                # Getting the common neighours of the diagonal (node1 - node2)
+                numNbrs, Nbrs = self.graph.GetCmnNbrs(node1_id, node2_id, True)
+
+                # Counting all the valid rectangles
+                for i in range(numNbrs):
+                    for j in range(i+1, numNbrs):
+                        node3_id = Nbrs[i]
+                        node4_id = Nbrs[j]
+                        rect = [node1_id, node2_id, node3_id, node4_id]
+                        rect.sort()
+
+                        if(tuple(rect) in visited):
+                            continue
+                        visited.add(tuple(rect))
+                        count_rectangles += 1
+
+        return count_rectangles
 
     def get_largest_wcc(self):
         '''
@@ -158,8 +193,8 @@ if __name__ == "__main__":
     # Creating network from the dataset
     network = Network(dataset=dataset)
 
-    # Saving the network name as "Email-EuAll"
-    network.network_name = "Email-EuAll"
+    # Saving the network name as "email-Eu-core"
+    network.network_name = "email-Eu-core"
 
     print("A.")
     print("  (a) Number of nodes: {}".format(network.get_num_of_nodes()))

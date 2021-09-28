@@ -29,20 +29,20 @@ Question 2
 -----------
 
 A.
-  (a) Number of nodes: 265214
-  (b) Number of edges: 420045
+  (a) Number of nodes: 1005
+  (b) Number of edges: 25571
 B.
-  (a) Number of nodes with degree=4: 4732
+  (a) Number of nodes with degree=4: 33
   (b) Plotting the Degree distribution...
       Plotting Done.
 C.
-  (a) Number of nodes in largest weakly connected component (WCC): 224832
-      Number of edges in largest weakly connected component (WCC): 395270
-  (b) Number of nodes in largest strongly connected component (SCC): 34203
-      Number of edges in largest strongly connected component (SCC): 151930
-D. Average Clustering Coefficient: 0.0671
-E. Number of triangles: 267313
-   Number of rectangles: Yet to implement
-F. Number of edge bridges: 213190
+  (a) Number of nodes in largest weakly connected component (WCC): 986
+      Number of edges in largest weakly connected component (WCC): 25552
+  (b) Number of nodes in largest strongly connected component (SCC): 803
+      Number of edges in largest strongly connected component (SCC): 24729
+D. Average Clustering Coefficient: 0.3994
+E. Number of triangles: 105461
+   Number of rectangles: 3800373
+F. Number of edge bridges: 83
 
 #################

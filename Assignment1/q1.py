@@ -30,7 +30,11 @@ class Network:
         
     def get_network_without_nodeids_divisible_by_3(self):
         # Making new graph after removing the specified nodes
-        new_graph = snap.PUNGraph.New()
+        new_graph = snap.LoadEdgeList(snap.PUNGraph, self.dataset, 0, 1)
+        for node in new_graph.Nodes():
+            if(node.GetId()%3==0):
+                new_graph.DelNode(node.GetId())
+        return new_graph
 
         # Adding all the nodes whose ids are not divisible by 3
         for node in self.graph.Nodes():

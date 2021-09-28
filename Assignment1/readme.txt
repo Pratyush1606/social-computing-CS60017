@@ -23,8 +23,8 @@ Social Computing (CS60017)
 ```
 Assignment1
 ├── datasets
-|   ├── Email-EuAll.txt
-|   ├── email-EuAll.txt.gz
+|   ├── email-Eu-core.txt
+|   ├── email-Eu-core.txt.gz
 |   ├── facebook_combined.txt.gz
 |   └── facebook_combined.txt
 ├── config.py
