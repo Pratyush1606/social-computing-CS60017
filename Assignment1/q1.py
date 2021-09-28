@@ -29,42 +29,15 @@ class Network:
             print(e)
         
     def get_network_without_nodeids_divisible_by_3(self):
-        # Making new graph after removing the specified nodes
+        '''
+        Get a new graph with all the nodes with node_id divisible by 3 removed
+        '''
         new_graph = snap.LoadEdgeList(snap.PUNGraph, self.dataset, 0, 1)
         for node in new_graph.Nodes():
             if(node.GetId()%3==0):
                 new_graph.DelNode(node.GetId())
         return new_graph
 
-        # Adding all the nodes whose ids are not divisible by 3
-        for node in self.graph.Nodes():
-            node_id = node.GetId()
-            if(node_id%3 != 0):
-                # If the node is not already added to the graph
-                if(not new_graph.IsNode(node_id)):
-                    new_graph.AddNode(node_id)
-
-        # Adding the corresponding edges in the new graph
-        for edge in self.graph.Edges():
-            source_node_id, dest_node_id = edge.GetId()
-
-            # Checking if any node id is divisible by 3 or not
-            if(source_node_id%3==0 or dest_node_id%3==0):
-                continue
-
-            # If the source node is not already added to the graph
-            if(not new_graph.IsNode(source_node_id)):
-                new_graph.AddNode(source_node_id)
-            
-            # If the dest node is not already added to the graph
-            if(not new_graph.IsNode(dest_node_id)):
-                new_graph.AddNode(dest_node_id)
-            
-            # Adding the edge
-            new_graph.AddEdge(source_node_id, dest_node_id)
-        
-        return new_graph
-    
     def get_nodes_with_highest_degree(self):
         '''
         Calculates the number of nodes with the highest degree and also get the node IDs with the highest degree in the network.
