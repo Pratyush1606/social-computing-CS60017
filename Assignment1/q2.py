@@ -1,7 +1,7 @@
 import os
-import sys
 import snap
-from PIL import Image
+import sys
+import matplotlib.pyplot as plt
 
 from config import CONFIG
 
@@ -58,32 +58,21 @@ class Network:
     
     def plot_degree_distribution(self):
         '''
-        Plot the degree distribution taking the graph as undirected
+        Plot the degree distribution
         '''
 
-        # Using the undirected version of the graph to plot the degree distribution
-        self.undirected_graph.PlotOutDegDistr(self.network_name, "{} - degree distribution".format(self.network_name))
+        deg_dist = self.graph.GetDegCnt()
+        x, y = [], []
+        for elem in deg_dist:
+            x.append(elem.GetVal1())
+            y.append(elem.GetVal2())
 
-        '''
-        Here all the files will be generated in this directory only. So the files have to moved to "plots"
-        directory. Also files will be having default snap generated name with png format, so that also needs to be changed to 
-        "deg-dist.jpg"
-        '''
-        for file in os.listdir(os.getcwd()):
-            if((file.endswith(".png") or file.endswith(".plt") or file.endswith(".tab")) and (self.network_name in file)):
-                file_location = os.path.join(os.getcwd(), file)
-                file_format = file[file.rfind(".")+1:]
-
-                # If file format is png, then save a copy in jpg format in plots dir
-                if(file_format=="png"):
-                    file_format = "jpg"
-                    img = Image.open(file_location).convert('RGB')
-                    file_name = "deg-dist.{}".format(file_format)
-                    new_file_location = os.path.join(plot_dir, file_name)
-                    img.save(new_file_location)
-                
-                # remove the files from the current directory
-                os.remove(file_location)
+        plt.plot(x, y)
+        plt.xlabel("Degree")
+        plt.ylabel("Frequency")
+        plt.title("Degree distribution of {} network".format(self.network_name))
+        fig_destination = os.path.join(plot_dir, "deg-dist.jpg")
+        plt.savefig(fig_destination)
     
     def get_avg_clustering_coeff(self):
         '''
@@ -162,7 +151,7 @@ class Network:
         return self.graph.GetMxScc()
     
     def print_graph_info(self):
-        self.graph.PrintInfo("Python type TUNGraph", "q2-graph-info.txt", False)
+        self.graph.PrintInfo("Python type TUNGraph", "q2-graph-info.txt", False)        
 
 
 class Tee(object):

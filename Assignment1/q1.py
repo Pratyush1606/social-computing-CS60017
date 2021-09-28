@@ -190,7 +190,9 @@ if __name__ == "__main__":
 
     print("2. The number of articulation points in the network: {}".format(network.get_num_articulation_points()))
 
-    print("3. The number of strongly connected components (SCC) in the network: {}".format(network.get_num_strongly_connected_comps()))
+    # Since the graph is undirected, the number of connected components will be equal to number of SCCs and WCCs
+    print("3. The number of connected components in the network: {}".format(network.get_num_strongly_connected_comps()))
+    print("   The number of strongly connected components (SCC) in the network: {}".format(network.get_num_strongly_connected_comps()))
     print("   The number of weakly connected components (WCC) in the network: {}".format(network.get_num_weakly_connected_comps()))
 
     print("4. Plotting the distribution of sizes of connected components...")

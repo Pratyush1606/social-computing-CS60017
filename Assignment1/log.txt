@@ -15,7 +15,8 @@ A. Structure of the network
 B. Components of the network
 1. The fraction of nodes in the largest connected component of the network: 1.0000
 2. The number of articulation points in the network: 11
-3. The number of strongly connected components (SCC) in the network: 1
+3. The number of connected components in the network: 1
+   The number of strongly connected components (SCC) in the network: 1
    The number of weakly connected components (WCC) in the network: 1
 4. Plotting the distribution of sizes of connected components...
    Plotting Done.

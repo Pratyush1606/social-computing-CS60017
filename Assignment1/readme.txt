@@ -12,6 +12,7 @@ Social Computing (CS60017)
   The code should run in any version of Python >= 3.7
 - SNAP 6.0.0
 - Pillow 8.3.2
+- Matplotlib
 
 > The dependencies have been frozen inside the requirements.txt file, and if you're working in a python virtual environment, the dependencies can be installed using the command  
 "pip install -r requirements.txt".
