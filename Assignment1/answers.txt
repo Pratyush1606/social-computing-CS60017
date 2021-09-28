@@ -42,7 +42,7 @@ C.
       Number of edges in largest strongly connected component (SCC): 24729
 D. Average Clustering Coefficient: 0.3994
 E. Number of triangles: 105461
-   Number of rectangles: 3800373
+   Number of rectangles: 4647873
 F. Number of edge bridges: 83
 
 #################

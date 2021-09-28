@@ -116,7 +116,7 @@ class Network:
         '''
 
         '''
-        Here the different directions are not being considered
+        Here the different direction/configuration is not being considered
         '''
         return self.graph.GetTriads()
 
@@ -126,27 +126,22 @@ class Network:
         '''
 
         '''
-        Using the same concept of getting the number of triangles, this function is being implemented without considering the direction.
+        Using the same concept of getting the number of triangles, this function is being implemented without considering the direction/configuration.
 
         '''
         # Making a copy of the graph
-        graph_copy = snap.LoadEdgeList(snap.PNGraph, self.dataset, 0, 1)
-        count_rectangles = 0
-        tot_nodes = graph_copy.GetNodes()
+        graph = snap.LoadEdgeList(snap.PNGraph, self.dataset, 0, 1)
+        node_count = graph.GetNodes()
+        count = 0
+        
+        for node1_id in range(node_count):
+            for node2_id in range(node1_id+1, node_count):
 
-        for node1_id in range(tot_nodes):
-            for node2_id in range(node1_id+1, tot_nodes):
-
-                # Getting the common neighbours of this diagonal containing nodes (node1, node2)
-                numNbrs = graph_copy.GetCmnNbrs(node1_id, node2_id)
-
-                # Counting all the rectangles being formed from all the other diagonal pairs
+                numNbrs, Nbrs = temp_graph.GetCmnNbrs(node1_id, node2_id, True)
                 count_rectangles += (numNbrs*(numNbrs-1))//2
 
-            # Since node1 has been visited, so it has to be removed from the
-            # graph otherwise, it will be recounted in any other rectangle
-            graph_copy.DelNode(node1_id)
-
+            # Deleting this node
+            temp_graph.DelNode(node1_id)
         return count_rectangles
 
     def get_largest_wcc(self):
@@ -176,9 +171,7 @@ class Tee(object):
 
 if __name__ == "__main__":
     # Configuring script to print to stdout as well as answers.txt
-    f = open(answer_loc, 'a')
-    backup = sys.stdout
-    sys.stdout = Tee(sys.stdout, f)
+
 
     print()
     print("Question 2")
@@ -219,3 +212,23 @@ if __name__ == "__main__":
     
     print()
     print("#################")
+
+
+
+
+graph = snap.LoadEdgeList(snap.PNGraph, dataset, 0, 1)
+count = 0
+
+for node_1 in graph.Nodes():
+    for node_2 in graph.Nodes():
+        node1_id = node_1.GetId()
+        node2_id = node_2.GetId()
+        if(node1_id == node2_id):
+            continue
+
+        tot_neighbours, tot_neighbours_list = graph.GetCmnNbrs(node1_id, node2_id, True)
+        count += (tot_neighbours*(tot_neighbours-1))//2
+
+    graph.DelNode(node1_id)
+
+return count
