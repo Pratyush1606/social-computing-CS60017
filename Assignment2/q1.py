@@ -5,14 +5,20 @@ from networkx.algorithms import community
 from collections import defaultdict
 import os
 
+from networkx.algorithms.community import community_utils
+
 # Configuring file locations of datasets, plots and output files
 from config import CONFIG
 
 # Datasets
-DBLP_DATASET = os.path.join(CONFIG["DATASET_DIR"], "com-dblp.ungraph.txt")
-EUCORE_DATASET = os.path.join(CONFIG["DATASET_DIR"], "email-Eu-core.txt")
-DBLP_GROUND_TRUTH_COM_DATASET = os.path.join(CONFIG["DATASET_DIR"], "com-dblp.all.cmty.txt")
-EUCORE_GROUND_TRUTH_COM_DATASET = os.path.join(CONFIG["DATASET_DIR"], "email-Eu-core-department-labels.txt")
+FOOTBALL_DATASET = os.path.join(CONFIG["DATASET_DIR"], "football.gml")
+POLBOOKS_DATASET = os.path.join(CONFIG["DATASET_DIR"], "polbooks.gml")
+
+FOOTBALL_TRUE_COMMS_NUM = 12
+POLBOOKS_TRUE_COMMS_NUM = 3
+
+FOOTBALL_GROUND_TRUTH_COM_DATASET = os.path.join(CONFIG["DATASET_DIR"], "com-FOOTBALL.all.cmty.txt")
+POLBOOKS_GROUND_TRUTH_COM_DATASET = os.path.join(CONFIG["DATASET_DIR"], "email-Eu-core-department-labels.txt")
 
 # Plot Directory
 PLOT_DIR = CONFIG["PLOT_DIR"]
@@ -33,8 +39,8 @@ with open(CLAUSET_OUTPUT_FILE, "w") as f:
 
 NEWMAN_METHOD_NAME = "NEWMAN"
 CLAUSET_METHOD_NAME = "CLAUSET"
-DBLP_DATASET_NAME = "DBLP"
-EUCORE_DATASET_NAME = "EUCORE"
+FOOTBALL_DATASET_NAME = "FOOTBALL"
+POLBOOKS_DATASET_NAME = "POLBOOKS"
 
 ###################################################
 
@@ -52,26 +58,24 @@ class Tee(object):
 
 ###################################################
 
-def get_num_of_communities(methodname, datasetname, graph):
+def get_num_of_communities(methodname, datasetname, graph, true_comms_num=None):
     '''
     Calculates the number of communities generated
 
     Also returns the list of communities
     '''
-    # Setting output file to be written into
-    # sys.stdout = Tee(sys.stdout, output_file)
     print("Dataset: {}".format(datasetname))
 
     if(methodname == NEWMAN_METHOD_NAME):
-        communities = community.girvan_newman(graph)
-        num_communities = len(list(communities))
+        communities = list(list(community.girvan_newman(graph))[true_comms_num-2])
+        num_communities = len(communities)
         print("Number of communities using Newman-Girvan method: {}".format(num_communities))
         
     elif(methodname == CLAUSET_METHOD_NAME):
-        communities = community.greedy_modularity_communities(graph)
-        num_communities = len(list(communities))
+        communities = list(community.greedy_modularity_communities(graph))
+        num_communities = len(communities)
         print("Number of communities using Clauset-Newman-Moore greedy modularity maximization method: {}".format(num_communities))
-        
+    
     print()
     return communities
 
@@ -83,21 +87,19 @@ def plot_community_size_distribution(methodname, datasetname, communities):
 
     communities: List of communities
     '''
-    data = defaultdict(int)
+    print("Community Size distribution of {} graph using {} method".format(datasetname, methodname))
+    points = []
     for c in communities:
-        data[len(c)] += 1
-    
-    x, y = [], []
-    for key, val in data.items():
-        x.append(key)
-        y.append(val)
-    
-    plt.plot(x, y)
+        points.append(len(c))
+    plt.hist(points, rwidth=0.2)
     plt.xlabel("Size of Communities")
     plt.ylabel("Frequency")
     plt.title("Community Size distribution of {} graph using {} method".format(datasetname, methodname))
     fig_destination = os.path.join(PLOT_DIR, f"{datasetname}_{methodname}_dist.png")
     plt.savefig(fig_destination)
+    plt.close()
+    print("Plotting Done")
+    print()
 
 ###################################################
 
@@ -105,7 +107,7 @@ def plot_ground_truth_community_size_distribution(methodname, datasetname, datas
     '''
     Plots the ground truth community size distribution for diff datasets and methods
     '''
-    if(datasetname == DBLP_DATASET_NAME):
+    if(datasetname == FOOTBALL_DATASET_NAME):
         '''
         Dataset is in the form of
         Com1_Node1 Com1_Node2 Com1_Node3 ....
@@ -119,7 +121,7 @@ def plot_ground_truth_community_size_distribution(methodname, datasetname, datas
         for t in comm_list:
             ground_truth_communities.append(list(map(int, t.strip().split())))
 
-    elif(datasetname == EUCORE_DATASET_NAME):
+    elif(datasetname == POLBOOKS_DATASET_NAME):
         '''
         Dataset is in the form of
         NodeId      Department
@@ -187,20 +189,40 @@ def print_top_5_communities_size(methodname, datasetname, community_subgraphs):
         number_of_nodes = community_subgraph.number_of_nodes()
         number_of_edges = community_subgraph.number_of_edges()
         print(f"Community {i+1}: (number_of_nodes = {number_of_nodes}, number_of_edges = {number_of_edges})")
+    print()
 
 ###################################################
 
-def get_community_coverage(methodname, datasetname, graph, communities):
+def get_community_coverage(graph, community):
+    '''
+    Get the coverage of a communtiy
+    '''
+    # Making a set of community nodes
+    if(not isinstance(community, set)):
+        community = set(community)
+    
+    intra_community_edges = 0
+    # Iterating over the links to count intra community edges
+    for e in graph.edges():
+        if((e[0] in community) and (e[1] in community)):
+            intra_community_edges += 1
+    coverage = intra_community_edges / len(graph.edges)
+    return coverage
+
+###################################################
+
+def get_top_5_community_coverage(methodname, datasetname, graph, communities):
     '''
     Get the coverage of the top 5 communities
     '''
     print("Method: {}".format(methodname))
     print("Dataset: {}".format(datasetname))
     for i in range(len(communities)):
-        com = communities[i]
-        coverage, performance = community.partition_quality(graph, [com])
-        print("Coverage of community {} = {}".format(i+1, coverage))
+        coverage = get_community_coverage(graph, communities[i])
+        print("Coverage of community {} = {:.3f}".format(i+1, coverage))
+    print()
 
+###################################################
 
 def get_jaccard_coefficient(methodname, datasetname, graph1, graph2):
     '''
@@ -216,13 +238,9 @@ print("Question 1")
 print("-----------")
 print()
 
-# Making undirected graph from DBLP Dataset
-Graphtype = nx.Graph()   # for undirected graph
-DBLP_GRAPH = nx.read_edgelist(DBLP_DATASET, create_using=Graphtype, nodetype=int)
-
-# Making directed graph from EUCORE Dataset
-Graphtype = nx.DiGraph()   # for directed graph
-EUCORE_GRAPH = nx.read_edgelist(EUCORE_DATASET, create_using=Graphtype, nodetype=int)
+# Reading graphs
+FOOTBALL_GRAPH = nx.read_gml(FOOTBALL_DATASET)
+POLBOOKS_GRAPH = nx.read_gml(POLBOOKS_DATASET)
 
 ###################################################
 
@@ -230,10 +248,10 @@ def run():
     # Part A
     print("[a]")
 
-    DBLP_NEWMAN_COMMUNITIES = get_num_of_communities(NEWMAN_METHOD_NAME, DBLP_DATASET_NAME, DBLP_GRAPH)
-    EUCORE_NEWMAN_COMMUNITIES = get_num_of_communities(NEWMAN_METHOD_NAME, EUCORE_DATASET_NAME, EUCORE_GRAPH)
-    DBLP_CLAUSET_COMMUNITIES = get_num_of_communities(CLAUSET_METHOD_NAME, DBLP_DATASET_NAME, DBLP_GRAPH)
-    EUCORE_CLAUSET_COMMUNITIES = get_num_of_communities(CLAUSET_METHOD_NAME, EUCORE_DATASET_NAME, EUCORE_GRAPH)
+    FOOTBALL_NEWMAN_COMMUNITIES = get_num_of_communities(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GRAPH, FOOTBALL_TRUE_COMMS_NUM)
+    POLBOOKS_NEWMAN_COMMUNITIES = get_num_of_communities(NEWMAN_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GRAPH, POLBOOKS_TRUE_COMMS_NUM)
+    FOOTBALL_CLAUSET_COMMUNITIES = get_num_of_communities(CLAUSET_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GRAPH)
+    POLBOOKS_CLAUSET_COMMUNITIES = get_num_of_communities(CLAUSET_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GRAPH)
 
     print()
 
@@ -242,10 +260,10 @@ def run():
     # Part B
     print("[b]")
 
-    plot_community_size_distribution(NEWMAN_METHOD_NAME, DBLP_DATASET_NAME, DBLP_NEWMAN_COMMUNITIES)
-    plot_community_size_distribution(NEWMAN_METHOD_NAME, EUCORE_DATASET_NAME, EUCORE_NEWMAN_COMMUNITIES)
-    plot_community_size_distribution(CLAUSET_METHOD_NAME, DBLP_DATASET_NAME, DBLP_CLAUSET_COMMUNITIES)
-    plot_community_size_distribution(CLAUSET_METHOD_NAME, EUCORE_DATASET_NAME, EUCORE_CLAUSET_COMMUNITIES)
+    plot_community_size_distribution(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_NEWMAN_COMMUNITIES)
+    plot_community_size_distribution(NEWMAN_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_NEWMAN_COMMUNITIES)
+    plot_community_size_distribution(CLAUSET_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_CLAUSET_COMMUNITIES)
+    plot_community_size_distribution(CLAUSET_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_CLAUSET_COMMUNITIES)
 
     print()
 
@@ -254,10 +272,10 @@ def run():
     # Part C
     print("[c]")
 
-    DBLP_NEWMAN_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(NEWMAN_METHOD_NAME, DBLP_DATASET_NAME, DBLP_GROUND_TRUTH_COM_DATASET)
-    EUCORE_NEWMAN_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(NEWMAN_METHOD_NAME, EUCORE_DATASET_NAME, EUCORE_GROUND_TRUTH_COM_DATASET)
-    DBLP_CLAUSET_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(CLAUSET_METHOD_NAME, DBLP_DATASET_NAME, DBLP_GROUND_TRUTH_COM_DATASET)
-    EUCORE_CLAUSET_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(CLAUSET_METHOD_NAME, EUCORE_DATASET_NAME, EUCORE_GROUND_TRUTH_COM_DATASET)
+    # FOOTBALL_NEWMAN_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GROUND_TRUTH_COM_DATASET)
+    # POLBOOKS_NEWMAN_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(NEWMAN_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GROUND_TRUTH_COM_DATASET)
+    # FOOTBALL_CLAUSET_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(CLAUSET_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GROUND_TRUTH_COM_DATASET)
+    # POLBOOKS_CLAUSET_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(CLAUSET_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GROUND_TRUTH_COM_DATASET)
 
     print()
 
@@ -266,21 +284,20 @@ def run():
     # Part D
     print("[d]")
 
-    DBLP_NEWMAN_TOP_5_COMMUNITIES = get_top_5_communities(DBLP_NEWMAN_COMMUNITIES)
-    EUCORE_NEWMAN_TOP_5_COMMUNITIES = get_top_5_communities(EUCORE_NEWMAN_COMMUNITIES)
-    DBLP_CLAUSET_TOP_5_COMMUNITIES =  get_top_5_communities(DBLP_CLAUSET_COMMUNITIES)
-    EUCORE_CLAUSET_TOP_5_COMMUNITIES = get_top_5_communities(EUCORE_CLAUSET_COMMUNITIES)
+    FOOTBALL_NEWMAN_TOP_5_COMMUNITIES = get_top_5_communities(FOOTBALL_NEWMAN_COMMUNITIES)
+    POLBOOKS_NEWMAN_TOP_5_COMMUNITIES = get_top_5_communities(POLBOOKS_NEWMAN_COMMUNITIES)
+    FOOTBALL_CLAUSET_TOP_5_COMMUNITIES =  get_top_5_communities(FOOTBALL_CLAUSET_COMMUNITIES)
+    POLBOOKS_CLAUSET_TOP_5_COMMUNITIES = get_top_5_communities(POLBOOKS_CLAUSET_COMMUNITIES)
 
-    DBLP_NEWMAN_TOP_5_COMMUNITIES_SUBGRAPHS = get_subragphs_from_communities(DBLP_GRAPH, DBLP_NEWMAN_TOP_5_COMMUNITIES)
-    EUCORE_NEWMAN_TOP_5_COMMUNITIES_SUBGRAPHS = get_subragphs_from_communities(EUCORE_GRAPH, EUCORE_NEWMAN_TOP_5_COMMUNITIES)
-    DBLP_CLAUSET_TOP_5_COMMUNITIES_SUBGRAPHS =  get_subragphs_from_communities(DBLP_GRAPH, DBLP_CLAUSET_TOP_5_COMMUNITIES)
-    EUCORE_CLAUSET_TOP_5_COMMUNITIES_SUBGRAPHS = get_subragphs_from_communities(EUCORE_GRAPH, EUCORE_CLAUSET_TOP_5_COMMUNITIES)
+    FOOTBALL_NEWMAN_TOP_5_COMMUNITIES_SUBGRAPHS = get_subragphs_from_communities(FOOTBALL_GRAPH, FOOTBALL_NEWMAN_TOP_5_COMMUNITIES)
+    POLBOOKS_NEWMAN_TOP_5_COMMUNITIES_SUBGRAPHS = get_subragphs_from_communities(POLBOOKS_GRAPH, POLBOOKS_NEWMAN_TOP_5_COMMUNITIES)
+    FOOTBALL_CLAUSET_TOP_5_COMMUNITIES_SUBGRAPHS =  get_subragphs_from_communities(FOOTBALL_GRAPH, FOOTBALL_CLAUSET_TOP_5_COMMUNITIES)
+    POLBOOKS_CLAUSET_TOP_5_COMMUNITIES_SUBGRAPHS = get_subragphs_from_communities(POLBOOKS_GRAPH, POLBOOKS_CLAUSET_TOP_5_COMMUNITIES)
 
-
-    print_top_5_communities_size(NEWMAN_METHOD_NAME, DBLP_DATASET_NAME, DBLP_NEWMAN_TOP_5_COMMUNITIES_SUBGRAPHS)
-    print_top_5_communities_size(NEWMAN_METHOD_NAME, EUCORE_DATASET_NAME, EUCORE_NEWMAN_TOP_5_COMMUNITIES_SUBGRAPHS)
-    print_top_5_communities_size(CLAUSET_METHOD_NAME, DBLP_DATASET_NAME, DBLP_CLAUSET_TOP_5_COMMUNITIES_SUBGRAPHS)
-    print_top_5_communities_size(CLAUSET_METHOD_NAME, EUCORE_DATASET_NAME, EUCORE_CLAUSET_TOP_5_COMMUNITIES_SUBGRAPHS)
+    print_top_5_communities_size(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_NEWMAN_TOP_5_COMMUNITIES_SUBGRAPHS)
+    print_top_5_communities_size(NEWMAN_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_NEWMAN_TOP_5_COMMUNITIES_SUBGRAPHS)
+    print_top_5_communities_size(CLAUSET_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_CLAUSET_TOP_5_COMMUNITIES_SUBGRAPHS)
+    print_top_5_communities_size(CLAUSET_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_CLAUSET_TOP_5_COMMUNITIES_SUBGRAPHS)
 
     print()
 
@@ -288,11 +305,11 @@ def run():
 
     # Part E
     print("[e]")
-
-    get_community_coverage(NEWMAN_METHOD_NAME, DBLP_DATASET_NAME, DBLP_GRAPH, DBLP_NEWMAN_TOP_5_COMMUNITIES)
-    get_community_coverage(NEWMAN_METHOD_NAME, EUCORE_DATASET_NAME, EUCORE_GRAPH, EUCORE_NEWMAN_TOP_5_COMMUNITIES)
-    get_community_coverage(CLAUSET_METHOD_NAME, DBLP_DATASET_NAME, DBLP_GRAPH, DBLP_CLAUSET_TOP_5_COMMUNITIES)
-    get_community_coverage(CLAUSET_METHOD_NAME, EUCORE_DATASET_NAME, EUCORE_GRAPH, EUCORE_CLAUSET_TOP_5_COMMUNITIES)
+    
+    get_top_5_community_coverage(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GRAPH, FOOTBALL_NEWMAN_TOP_5_COMMUNITIES)
+    get_top_5_community_coverage(NEWMAN_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GRAPH, POLBOOKS_NEWMAN_TOP_5_COMMUNITIES)
+    get_top_5_community_coverage(CLAUSET_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GRAPH, FOOTBALL_CLAUSET_TOP_5_COMMUNITIES)
+    get_top_5_community_coverage(CLAUSET_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GRAPH, POLBOOKS_CLAUSET_TOP_5_COMMUNITIES)
 
     print()
 
@@ -306,8 +323,9 @@ def run():
 
     print()
 
+# run()
+# def check():
+#     FOOTBALL_NEWMAN_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GROUND_TRUTH_COM_DATASET)
 
-def check():
-    DBLP_NEWMAN_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(NEWMAN_METHOD_NAME, DBLP_DATASET_NAME, DBLP_GROUND_TRUTH_COM_DATASET)
-
-check()
+# check()
+run()
