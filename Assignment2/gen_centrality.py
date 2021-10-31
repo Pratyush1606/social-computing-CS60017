@@ -1,6 +1,9 @@
 from pathlib import Path
 from collections import defaultdict, deque
 import os
+import matplotlib.pyplot as plt
+import networkx as nx
+from networkx.algorithms import centrality
 
 # Configuring file locations of datasets, plots and output files
 from config import CONFIG
@@ -12,10 +15,14 @@ DATASET = os.path.join(CONFIG["DATASET_DIR"], "imdb_prodco.adj")
 PLOT_DIR = CONFIG["PLOT_DIR"]
 
 # Output Text File
-OUTPUT_FILE = Path(".\output_2_closeness.txt")
+OUTPUT_FILE_1 = Path(".\output_2_closeness.txt")
+OUTPUT_FILE_2 = Path(".\output_2.txt")
 
 # Making the blank output files
-with open(OUTPUT_FILE, "w") as f:
+with open(OUTPUT_FILE_1, "w") as f:
+    f.write("")
+# Making the blank output files
+with open(OUTPUT_FILE_2, "w") as f:
     f.write("")
 
 ###################################################
@@ -41,7 +48,7 @@ def get_shortest_length_path_from_source(node, graph):
                 dist.append(neigh_dist)
     return dist
 
-def closeness_centrality(V, graph):
+def get_closeness_centrality(V, graph):
     '''
     Calculate closeness_centrality of a graph
 
@@ -66,40 +73,84 @@ def closeness_centrality(V, graph):
         closeness_centrality[node] = node_closeness_centrality
     return closeness_centrality
 
+def make_graph_from_dataset(data):
+    # Returns a graph (adjacency list) from data read from dataset
+    graph = defaultdict(list)
+    for line in data:
+        u, v, w = map(int, line.strip().split(","))
+        graph[u].append((v, w))
+        graph[v].append((u, w))
+    return graph
+
+def get_top_50_nodes(centrality_list):
+    '''
+    Returns the list of top 50 nodes with respect to closeness centrality
+    '''
+    top_50_nodes_value_list = sorted(list(enumerate(centrality_list)), key=lambda x: x[1], reverse=True)[:50]
+    top_50_nodes = [node for node, _ in top_50_nodes_value_list]
+    return top_50_nodes
+
+###################################################
+print()
+print("Question 1")
+print("-----------")
+print()
+
 # Reading Dataset
 with open(DATASET, "r") as file:
     data = file.readlines()
 
 rows, columns = map(int, data[0].strip().split(","))
+data = data[1:]     # Removing the first line containing the rows and columns
 
-# adjacency_mat = [[float("inf") for _ in range(columns)] for _ in range(rows)]
-# for line in data[1:]:
-#     u, v, w = map(int, line.strip().split(","))
-#     adjacency_mat[u][v] = w
-#     adjacency_mat[v][u] = w
+###################################################
 
-# # Making adjacency list
-# graph = defaultdict(list)
-# for i in range(rows):
-#     for j in range(columns):
-#         if(adjacency_mat[i][j]!=float("inf")):
-#             graph[i].append((j, adjacency_mat[i][j]))
-
+print("Part A")
 # Making adjacency list
-graph = defaultdict(list)
-for line in data[1:]:
-    u, v, w = map(int, line.strip().split(","))
-    graph[u].append((v, w))
-    graph[v].append((u, w))
+graph = make_graph_from_dataset(data)
+closeness_centrality_list = get_closeness_centrality(rows, graph)
 
-closeness_cenrality_list = closeness_centrality(rows, graph)
-
-# Writing output to the output file
+# Writing output to the output 1 file
 output = ""
-for node_ID, centrality_value in enumerate(closeness_cenrality_list):
+for node_ID, centrality_value in enumerate(closeness_centrality_list):
     output += "{} {}".format(node_ID, centrality_value)
     output += "\n"
-
-with open(OUTPUT_FILE, "w") as f:
+with open(OUTPUT_FILE_1, "w") as f:
     f.write(output)
 
+###################################################
+
+print("Part B")
+# Making a un directing graph from the data read from dataset
+G = nx.Graph()
+for line in data:
+    u, v, w = map(int, line.strip().split(","))
+    G.add_edge(u, v)
+
+print("a.")
+closeness_centrality_dict_from_nx = centrality.closeness_centrality(G)
+closeness_centrality_list_from_nx = [0]*rows
+for key, value in closeness_centrality_dict_from_nx.items():
+    closeness_centrality_list_from_nx[key] = value
+
+# Plotting the histogram
+print("Plotting Closeness Centrality Values")
+plt.title("Normalized Closeness Centrality")
+plt.hist(closeness_centrality_list_from_nx, rwidth=0.2)
+plt.xlabel("Closeness Centrality Values")
+plt.ylabel("Frequency")
+fig_destination = os.path.join(PLOT_DIR, "closeness_dist.png")
+plt.savefig(fig_destination)
+plt.close()
+print("Plotting Done")
+print()
+
+print("b.")
+top_50_nodes = get_top_50_nodes(closeness_centrality_list)
+top_50_nodes_from_nx = get_top_50_nodes(closeness_centrality_list_from_nx)
+overlapping_nodes = list(set(top_50_nodes) & set(top_50_nodes_from_nx))
+
+# Writing output to the output 2 file
+output = "#overlaps for Closeness Centrality: {}".format(len(overlapping_nodes))
+with open(OUTPUT_FILE_2, "w") as f:
+    f.write(output)
