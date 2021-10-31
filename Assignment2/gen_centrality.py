@@ -37,9 +37,6 @@ def get_shortest_length_path_from_source(node, graph):
             if(not visited[neigh]):
                 visited[neigh] = True
                 neigh_dist = curr_dist + 1
-                # Have to confirm if here edge weight has to be considered or not 
-                # if considered then add weight instead of 1
-
                 q.append((neigh, neigh_dist))
                 dist.append(neigh_dist)
     return dist
@@ -64,8 +61,9 @@ def closeness_centrality(V, graph):
         node_closeness_centrality = 0
         if(tot_shortest_paths>0 and V>1):
             node_closeness_centrality = (len_shortest_paths - 1)/tot_shortest_paths
-        closeness_centrality[node] = round(node_closeness_centrality, 3)
-
+            # Normalizing with respect to unconnected components
+            node_closeness_centrality *= (len_shortest_paths - 1)/(V - 1)
+        closeness_centrality[node] = node_closeness_centrality
     return closeness_centrality
 
 # Reading Dataset
@@ -104,3 +102,4 @@ for node_ID, centrality_value in enumerate(closeness_cenrality_list):
 
 with open(OUTPUT_FILE, "w") as f:
     f.write(output)
+
