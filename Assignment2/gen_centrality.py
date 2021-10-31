@@ -2,8 +2,6 @@ from pathlib import Path
 from collections import defaultdict, deque
 import os
 
-from matplotlib.pyplot import viridis
-
 # Configuring file locations of datasets, plots and output files
 from config import CONFIG
 

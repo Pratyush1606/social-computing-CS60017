@@ -5,8 +5,6 @@ from networkx.algorithms import community
 from collections import defaultdict
 import os
 
-from networkx.algorithms.community import community_utils
-
 # Configuring file locations of datasets, plots and output files
 from config import CONFIG
 
@@ -87,7 +85,7 @@ def plot_community_size_distribution(methodname, datasetname, communities):
 
     communities: List of communities
     '''
-    print("Community Size distribution of {} graph using {} method".format(datasetname, methodname))
+    print("Plotting Community Size distribution of {} graph using {} method".format(datasetname, methodname))
     points = []
     for c in communities:
         points.append(len(c))
@@ -103,57 +101,32 @@ def plot_community_size_distribution(methodname, datasetname, communities):
 
 ###################################################
 
-def plot_ground_truth_community_size_distribution(methodname, datasetname, dataset):
+def plot_ground_truth_community_size_distribution(methodname, datasetname, graph):
     '''
-    Plots the ground truth community size distribution for diff datasets and methods
+    Plot the ground truth community size distribution
+    
+    Here the nodes with same `value` are being considered in the same true community.
     '''
-    if(datasetname == FOOTBALL_DATASET_NAME):
-        '''
-        Dataset is in the form of
-        Com1_Node1 Com1_Node2 Com1_Node3 ....
-        .....       .....
-        '''
-        ground_truth_communities = []
-        # Reading the ground truth dataset
-        with open(dataset, "r") as f:
-            comm_list = f.readlines()
-        
-        for t in comm_list:
-            ground_truth_communities.append(list(map(int, t.strip().split())))
-
-    elif(datasetname == POLBOOKS_DATASET_NAME):
-        '''
-        Dataset is in the form of
-        NodeId      Department
-        .....       .....
-        '''
-        data = defaultdict(list)
-
-        # Reading the ground truth dataset
-        with open(dataset, "r") as f:
-            node_id_dept_list = f.readlines()
-        
-        for t in node_id_dept_list:
-            node_id, dept = map(int, t.strip().split())
-            data[dept].append(node_id)
-        ground_truth_communities = list(data.values())
-
-    # Calculating the frequency of the communities
-    freq = defaultdict(int)
-    for comm in ground_truth_communities:
-        freq[len(comm)] += 1
-
-    x, y = [], []
-    for key, val in freq.items():
-        x.append(key)
-        y.append(val)
-        
-    plt.plot(x, y)
+    # Making the ground truth community
+    communities = defaultdict(list)
+    for node, value in list(graph.nodes(data="value")):
+        communities[value].append(node)
+    ground_truth_communities = list(communities.values())
+    
+    # Plotting the histogram
+    plt.title("Plotting Ground Truth Community Size distribution of {} using {} method".format(datasetname, methodname))
+    points = []
+    for c in ground_truth_communities:
+        points.append(len(c))
+    plt.hist(points, rwidth=0.2)
     plt.xlabel("Size of Ground Truth Communities")
     plt.ylabel("Frequency")
     plt.title("Ground Truth Community Size distribution of {} using {} method".format(datasetname, methodname))
     fig_destination = os.path.join(PLOT_DIR, f"ground_truth_communities_dist_{datasetname}_{methodname}.png")
     plt.savefig(fig_destination)
+    plt.close()
+    print("Plotting Done")
+    print()
     return ground_truth_communities
     
 ###################################################
@@ -162,6 +135,13 @@ def get_top_5_communities(communities):
     '''
     Get the top 5 communities based on the number of nodes from a list of communities'''
     return sorted(communities, key=lambda com: len(com), reverse=True)[:5]
+
+###################################################
+
+def get_top_communtiy(communities):
+    '''
+    Get the top community based on the number of nodes from a list of communities'''
+    return sorted(communities, key=lambda com: len(com), reverse=True)[0]
 
 ###################################################
 
@@ -219,18 +199,26 @@ def get_top_5_community_coverage(methodname, datasetname, graph, communities):
     print("Dataset: {}".format(datasetname))
     for i in range(len(communities)):
         coverage = get_community_coverage(graph, communities[i])
-        print("Coverage of community {} = {:.3f}".format(i+1, coverage))
+        print("Coverage of community {} = {}".format(i+1, coverage))
     print()
 
 ###################################################
 
-def get_jaccard_coefficient(methodname, datasetname, graph1, graph2):
+def get_jaccard_coefficient(methodname, datasetname, community1, community2):
     '''
     https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.link_prediction.jaccard_coefficient.html#networkx.algorithms.link_prediction.jaccard_coefficient
 
     https://stackoverflow.com/questions/50704439/python-jaccard-similartity-between-two-networks
     '''
-    pass
+    print("Method: {}".format(methodname))
+    print("Dataset: {}".format(datasetname))
+    union_size = len(set(community1) | set(community2))
+    intersection_size = len(set(community1) & set(community2))
+    coeff = 0
+    if(union_size != 0):
+        coeff = intersection_size / union_size
+    print("jaccard coefficient = {}".format(coeff))
+    print()
 
 ###################################################
 print()
@@ -242,48 +230,38 @@ print()
 FOOTBALL_GRAPH = nx.read_gml(FOOTBALL_DATASET)
 POLBOOKS_GRAPH = nx.read_gml(POLBOOKS_DATASET)
 
-###################################################
-
 def run():
+    ###################################################
+
     # Part A
     print("[a]")
-
     FOOTBALL_NEWMAN_COMMUNITIES = get_num_of_communities(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GRAPH, FOOTBALL_TRUE_COMMS_NUM)
     POLBOOKS_NEWMAN_COMMUNITIES = get_num_of_communities(NEWMAN_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GRAPH, POLBOOKS_TRUE_COMMS_NUM)
     FOOTBALL_CLAUSET_COMMUNITIES = get_num_of_communities(CLAUSET_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GRAPH)
     POLBOOKS_CLAUSET_COMMUNITIES = get_num_of_communities(CLAUSET_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GRAPH)
 
-    print()
-
     ###################################################
 
     # Part B
     print("[b]")
-
     plot_community_size_distribution(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_NEWMAN_COMMUNITIES)
     plot_community_size_distribution(NEWMAN_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_NEWMAN_COMMUNITIES)
     plot_community_size_distribution(CLAUSET_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_CLAUSET_COMMUNITIES)
     plot_community_size_distribution(CLAUSET_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_CLAUSET_COMMUNITIES)
 
-    print()
-
     ###################################################
 
     # Part C
     print("[c]")
-
-    # FOOTBALL_NEWMAN_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GROUND_TRUTH_COM_DATASET)
-    # POLBOOKS_NEWMAN_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(NEWMAN_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GROUND_TRUTH_COM_DATASET)
-    # FOOTBALL_CLAUSET_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(CLAUSET_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GROUND_TRUTH_COM_DATASET)
-    # POLBOOKS_CLAUSET_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(CLAUSET_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GROUND_TRUTH_COM_DATASET)
-
-    print()
+    FOOTBALL_NEWMAN_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GRAPH)
+    POLBOOKS_NEWMAN_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(NEWMAN_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GRAPH)
+    FOOTBALL_CLAUSET_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(CLAUSET_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GRAPH)
+    POLBOOKS_CLAUSET_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(CLAUSET_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GRAPH)
 
     ###################################################
 
     # Part D
     print("[d]")
-
     FOOTBALL_NEWMAN_TOP_5_COMMUNITIES = get_top_5_communities(FOOTBALL_NEWMAN_COMMUNITIES)
     POLBOOKS_NEWMAN_TOP_5_COMMUNITIES = get_top_5_communities(POLBOOKS_NEWMAN_COMMUNITIES)
     FOOTBALL_CLAUSET_TOP_5_COMMUNITIES =  get_top_5_communities(FOOTBALL_CLAUSET_COMMUNITIES)
@@ -299,33 +277,32 @@ def run():
     print_top_5_communities_size(CLAUSET_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_CLAUSET_TOP_5_COMMUNITIES_SUBGRAPHS)
     print_top_5_communities_size(CLAUSET_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_CLAUSET_TOP_5_COMMUNITIES_SUBGRAPHS)
 
-    print()
-
     ###################################################
 
     # Part E
     print("[e]")
-    
     get_top_5_community_coverage(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GRAPH, FOOTBALL_NEWMAN_TOP_5_COMMUNITIES)
     get_top_5_community_coverage(NEWMAN_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GRAPH, POLBOOKS_NEWMAN_TOP_5_COMMUNITIES)
     get_top_5_community_coverage(CLAUSET_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GRAPH, FOOTBALL_CLAUSET_TOP_5_COMMUNITIES)
     get_top_5_community_coverage(CLAUSET_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_GRAPH, POLBOOKS_CLAUSET_TOP_5_COMMUNITIES)
 
-    print()
-
     ###################################################
 
     # Part F
     print("[f]")
+    FOOTBALL_NEWMAN_TOP_COMMUNITY = FOOTBALL_NEWMAN_TOP_5_COMMUNITIES[0]
+    POLBOOKS_NEWMAN_TOP_COMMUNITY = POLBOOKS_NEWMAN_TOP_5_COMMUNITIES[0]
+    FOOTBALL_CLAUSET_TOP_COMMUNITY = FOOTBALL_CLAUSET_TOP_5_COMMUNITIES[0]
+    POLBOOKS_CLAUSET_TOP_COMMUNITY = POLBOOKS_CLAUSET_TOP_5_COMMUNITIES[0]
 
+    FOOTBALL_NEWMAN_GROUND_TRUTH_TOP_COMMUNITY = get_top_communtiy(FOOTBALL_NEWMAN_GROUND_TRUTH_COMMUNITIES)
+    POLBOOKS_NEWMAN_GROUND_TRUTH_TOP_COMMUNITY = get_top_communtiy(POLBOOKS_NEWMAN_GROUND_TRUTH_COMMUNITIES)
+    FOOTBALL_CLAUSET_GROUND_TRUTH_TOP_COMMUNITY = get_top_communtiy(FOOTBALL_CLAUSET_GROUND_TRUTH_COMMUNITIES)
+    POLBOOKS_CLAUSET_GROUND_TRUTH_TOP_COMMUNITY = get_top_communtiy(POLBOOKS_CLAUSET_GROUND_TRUTH_COMMUNITIES)
 
+    get_jaccard_coefficient(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_NEWMAN_TOP_COMMUNITY, FOOTBALL_NEWMAN_GROUND_TRUTH_TOP_COMMUNITY)
+    get_jaccard_coefficient(NEWMAN_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_NEWMAN_TOP_COMMUNITY, POLBOOKS_NEWMAN_GROUND_TRUTH_TOP_COMMUNITY)
+    get_jaccard_coefficient(CLAUSET_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_CLAUSET_TOP_COMMUNITY, FOOTBALL_CLAUSET_GROUND_TRUTH_TOP_COMMUNITY)
+    get_jaccard_coefficient(CLAUSET_METHOD_NAME, POLBOOKS_DATASET_NAME, POLBOOKS_CLAUSET_TOP_COMMUNITY, POLBOOKS_CLAUSET_GROUND_TRUTH_TOP_COMMUNITY)
 
-
-    print()
-
-# run()
-# def check():
-#     FOOTBALL_NEWMAN_GROUND_TRUTH_COMMUNITIES = plot_ground_truth_community_size_distribution(NEWMAN_METHOD_NAME, FOOTBALL_DATASET_NAME, FOOTBALL_GROUND_TRUTH_COM_DATASET)
-
-# check()
 run()
