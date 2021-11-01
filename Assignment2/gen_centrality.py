@@ -92,7 +92,7 @@ def get_top_50_nodes(centrality_list):
 
 ###################################################
 print()
-print("Question 1")
+print("Question 2")
 print("-----------")
 print()
 
