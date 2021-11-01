@@ -57,7 +57,8 @@ Assignment2
     ```
 
 4. * To run *question1*, run all the cells of the `q1.iypnb` file.  
-Always use **Run all** command to run the cells of the juputer file. If stopped in between, please start running from the starting cell otherwise duplicate outputs will be genrated into the output files.
+Always use **Run all** command to run the cells of the juputer file. If stopped in between, 
+please start running from the starting cell otherwise duplicate outputs will be genrated into the output files.
   
    * To run *question2*, run `gen_centrality.py` file.
  
@@ -69,6 +70,10 @@ Always use **Run all** command to run the cells of the juputer file. If stopped 
 
 ## Points to Consider
 
-* After successful execution of the above files, a folder `PLOT` containing all the specific distribution plots and other *txt* files containing all the answers of both the questions will be generated.
+* After successful execution of the above files, a folder `PLOT` containing all the
+specific distribution plots and other *txt* files containing all the answers of both the 
+questions will be generated.
 
-* **While running *q1.ipynb*, if it is stopped in between the execution, please run the file again from the starting cell otherwise the duplicate outputs will get appended into the output files.**
+* **While running *q1.ipynb*, if it is stopped in between the execution, please run the
+ file again from the starting cell otherwise the duplicate outputs will get appended into
+ the output files.**
