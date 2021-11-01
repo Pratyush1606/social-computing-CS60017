@@ -121,7 +121,7 @@ with open(OUTPUT_FILE_1, "w") as f:
 ###################################################
 
 print("Part B")
-# Making a un directing graph from the data read from dataset
+# Making an undirected graph from the data read from dataset
 G = nx.Graph()
 for line in data:
     u, v, w = map(int, line.strip().split(","))
