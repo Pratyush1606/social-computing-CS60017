@@ -38,6 +38,7 @@ def get_shortest_length_path_from_source(node, graph):
     visited[node] = True
     q = deque()
     q.append((node, 0))
+    dist.append(0)
     while(q):
         curr_node, curr_dist = q.popleft()
         for neigh, weight in graph[curr_node]:
